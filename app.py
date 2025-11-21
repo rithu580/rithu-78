@@ -1,5 +1,4 @@
 # app.py
-# app.py
 import streamlit as st
 import os
 import requests
@@ -124,4 +123,19 @@ if st.session_state.awaiting_reply and st.session_state.history:
                 st.session_state.awaiting_reply = False
                 # NOTE: do NOT call st.experimental_rerun() here — Streamlit will naturally rerender with new history
 
-       
+COOLDOWN_SECONDS = 5
+
+if "cooldown_until" not in st.session_state:
+    st.session_state.cooldown_until = 0
+
+with st.form("input_form", clear_on_submit=True):
+    # disable input/button while cooling down
+    disabled = time.time() < st.session_state.cooldown_until
+    user_input = st.text_input("Type your message or question", key="input", disabled=disabled)
+    submit = st.form_submit_button("Send", disabled=disabled)
+
+if submit and user_input:
+    st.session_state.history.append({"role": "user", "content": user_input})
+    st.session_state.awaiting_reply = True
+    # start cooldown
+    st.session_state.cooldown_until = time.time() + COOLDOWN_SECONDS
